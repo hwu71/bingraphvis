@@ -255,7 +255,44 @@ class AngrColorDDGData(EdgeAnnotator, NodeAnnotator):
             node.fillcolor = '#ccffcc'
             node.style = 'filled'
 
+class AngrColorPDGEdges(EdgeAnnotator):
+    def __init__(self,project=None):
+        super(AngrColorPDGEdges, self).__init__()
+        self.project = project
 
+    def annotate_edge(self, edge):
+        if 'type' in edge.meta:
+            if edge.meta['type'] == 'dd':
+                edge.style = 'dotted'
+            elif edge.meta['type'] == 'cd':
+                edge.color = 'blue'
+
+class AngrColorPDGNodes(NodeAnnotator):
+    def __init__(self, project=None, directly=None, indirectly=None):
+        super(AngrColorPDGNodes, self).__init__()
+        self.project = project
+        self.directly = directly 
+        self.indirectly = indirectly 
+
+    def annotate_node(self, node):
+        block_addr = node.obj.block_addr 
+        stmt_idx = node.obj.stmt_idx 
+        if (block_addr, stmt_idx) in self.directly:
+            node.style = 'filled'
+            node.fillcolor = '#FFA693'
+        elif (block_addr, stmt_idx) in self.indirectly:
+            node.style = 'filled'
+            node.fillcolor = '#93A3FF'
+
+class AngrColorCFGNodes(NodeAnnotator):
+    def __init__(self, special_nodes=None):
+        super(AngrColorCFGNodes, self).__init__()
+        self.special_nodes = special_nodes
+
+    def annotate_node(self, node):
+        if node.obj.addr in self.special_nodes:
+            node.style = 'filled'
+            node.fillcolor = '#FFA693'
 class AngrActionAnnotatorVex(ContentAnnotator):
     def __init__(self):
         super(AngrActionAnnotatorVex, self).__init__('vex')
