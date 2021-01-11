@@ -2,6 +2,7 @@
 from ..base import *
 import angr
 from angr.sim_variable import SimRegisterVariable, SimMemoryVariable, SimTemporaryVariable, SimConstantVariable, SimStackVariable
+from pyvex import stmt, expr
 
 
 def safehex(val):
@@ -377,6 +378,15 @@ class AngrVex(Content):
 
         data = []
         for j, s in enumerate(vex.statements):
+            stmt_str = None
+            if isinstance(s, stmt.Put):
+                stmt_str = s.__str__(reg_name=vex.arch.translate_register_name(s.offset, s.data.result_size(vex.tyenv) // 8))
+            elif isinstance(s, stmt.WrTmp) and isinstance(s.data, expr.Get):
+                stmt_str = s.__str__(reg_name=vex.arch.translate_register_name(s.data.offset, s.data.result_size(vex.tyenv) // 8))
+            elif isinstance(s, stmt.Exit):
+                stmt_str = s.__str__(reg_name=vex.arch.translate_register_name(s.offsIP, vex.arch.bits // 8))
+            else:
+                stmt_str = s.__str__()
             if stmt_idx == None or stmt_idx == j:
                 data.append({
                     'addr': {
@@ -385,7 +395,7 @@ class AngrVex(Content):
                         'port': str(j)
                     },
                     'statement': {
-                        'content': str(s),
+                        'content': stmt_str,
                         'align': 'LEFT'
                     },
                     '_stmt': s,
