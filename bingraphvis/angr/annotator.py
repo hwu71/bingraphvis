@@ -277,12 +277,16 @@ class AngrColorPDGNodes(NodeAnnotator):
     def annotate_node(self, node):
         block_addr = node.obj.block_addr 
         stmt_idx = node.obj.stmt_idx 
-        if (block_addr, stmt_idx) in self.directly:
-            node.style = 'filled'
-            node.fillcolor = '#FFA693'
-        elif (block_addr, stmt_idx) in self.indirectly:
-            node.style = 'filled'
-            node.fillcolor = '#93A3FF'
+        for (irsb, _stmt_idx) in self.directly:
+            if block_addr == irsb.addr and stmt_idx == _stmt_idx:
+                    node.style = 'filled'
+                    node.fillcolor = '#FFA693'
+                    return 
+
+        for (irsb, _stmt_idx) in self.indirectly:
+            if block_addr == irsb.addr and stmt_idx == _stmt_idx:
+                node.style = 'filled'
+                node.fillcolor = '#93A3FF'
 
 class AngrColorCFGNodes(NodeAnnotator):
     def __init__(self, special_nodes=None):
