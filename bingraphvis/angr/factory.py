@@ -7,7 +7,9 @@ class AngrVisFactory(object):
     def __init__(self):
         pass
 
-    def default_cfg_pipeline(self, cfg, asminst=False, vexinst=False, remove_path_terminator=True, color_edges=True, comments=True):
+    def default_cfg_pipeline(self, cfg, asminst=False, vexinst=False, remove_path_terminator=True, color_edges=True, comments=True, 
+                             directly_affected_stmts_dict=None, indirectly_affected_stmts_dict=None, 
+                             directly_affected_ins_addrs=None, indirectly_affected_ins_addrs=None):
         project = cfg.project
         vis = Vis()
         vis.set_source(AngrCFGSource())
@@ -16,7 +18,10 @@ class AngrVisFactory(object):
         vis.add_content(AngrCFGHead())
         vis.add_node_annotator(AngrColorSimprocedures())
         if asminst:
-            vis.add_content(AngrAsm(project))
+            if directly_affected_ins_addrs is not None and directly_affected_ins_addrs is not None:
+                vis.add_content(AngrAsm(project, directly_affected_ins_addrs, indirectly_affected_ins_addrs))
+            else:
+                vis.add_content(AngrAsm(project))
             if comments:
                 if cfg.sort == 'fast':
                     if project.arch.name in ('X86', 'AMD64'):
@@ -25,7 +30,10 @@ class AngrVisFactory(object):
                 else:
                     vis.add_content_annotator(AngrCommentsAsm(project))
         if vexinst:
-            vis.add_content(AngrVex(project))
+            if directly_affected_stmts_dict is not None and indirectly_affected_stmts_dict is not None:
+                vis.add_content(AngrVex(project, directly_affected_stmts_dict, indirectly_affected_stmts_dict))
+            else:
+                vis.add_content(AngrVex(project))
             if color_edges:
                 vis.add_edge_annotator(AngrColorEdgesVex())
         elif asminst:

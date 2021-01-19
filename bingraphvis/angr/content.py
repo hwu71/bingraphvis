@@ -205,9 +205,11 @@ class AngrDDGVariableHead(Content):
 
     
 class AngrAsm(Content):
-    def __init__(self, project):
+    def __init__(self, project, directly_affected_ins_addrs=None, indirectly_affected_ins_addrs=None):
         super(AngrAsm, self).__init__('asm', ['addr', 'mnemonic', 'operands'])
-        self.project = project        
+        self.project = project       
+        self.directly_affected_ins_addrs = directly_affected_ins_addrs
+        self.indirectly_affected_ins_addrs = indirectly_affected_ins_addrs
 
     def gen_render(self, n):
         node = n.obj
@@ -265,18 +267,26 @@ class AngrAsm(Content):
 
         data = []
         for ins in insns:
+            _ins_color = None
+            if self.directly_affected_ins_addrs is not None and ins.address in self.directly_affected_ins_addrs:
+                _ins_color = '#FFA693'
+            elif self.indirectly_affected_ins_addrs is not None and ins.address in self.indirectly_affected_ins_addrs:
+                _ins_color = '#93A3FF'
             data.append({
                 'addr': {
                     'content': "0x%08x:\t" % ins.address,
-                    'align': 'LEFT'
+                    'align': 'LEFT',
+                    'bgcolor': _ins_color
                 },
                 'mnemonic': {
                     'content': ins.mnemonic,
-                    'align': 'LEFT'
+                    'align': 'LEFT',
+                    'bgcolor': _ins_color
                 },
                 'operands': {
                     'content': ins.op_str,
-                    'align': 'LEFT'
+                    'align': 'LEFT',
+                    'bgcolor': _ins_color
                 },
                 '_ins': ins,
                 '_addr': ins.address
@@ -322,9 +332,11 @@ class AngrAIL(Content):
 
 
 class AngrVex(Content):
-    def __init__(self, project):
+    def __init__(self, project, directly_affected_stmts_dict=None, indirectly_affected_stmts_dict=None):
         super(AngrVex, self).__init__('vex', ['addr', 'statement'])
-        self.project = project        
+        self.project = project  
+        self.directly_affected_stmts_dict = directly_affected_stmts_dict
+        self.indirectly_affected_stmts_dict = indirectly_affected_stmts_dict
 
     def gen_render(self, n):
         node = n.obj
@@ -379,6 +391,7 @@ class AngrVex(Content):
         data = []
         for j, s in enumerate(vex.statements):
             stmt_str = None
+            stmt_color = None
             if isinstance(s, stmt.Put):
                 stmt_str = s.__str__(reg_name=vex.arch.translate_register_name(s.offset, s.data.result_size(vex.tyenv) // 8))
             elif isinstance(s, stmt.WrTmp) and isinstance(s.data, expr.Get):
@@ -387,6 +400,14 @@ class AngrVex(Content):
                 stmt_str = s.__str__(reg_name=vex.arch.translate_register_name(s.offsIP, vex.arch.bits // 8))
             else:
                 stmt_str = s.__str__()
+            if self.directly_affected_stmts_dict is not None and\
+                addr in self.directly_affected_stmts_dict and\
+                j in self.directly_affected_stmts_dict[addr]:
+                stmt_color = '#FFA693'
+            elif self.indirectly_affected_stmts_dict is not None and\
+                addr in self.indirectly_affected_stmts_dict and\
+                j in self.indirectly_affected_stmts_dict[addr]:
+                stmt_color = '#93A3FF'
             if stmt_idx == None or stmt_idx == j:
                 data.append({
                     'addr': {
@@ -396,10 +417,12 @@ class AngrVex(Content):
                     },
                     'statement': {
                         'content': stmt_str,
-                        'align': 'LEFT'
+                        'align': 'LEFT',
+                        'bgcolor': stmt_color
                     },
                     '_stmt': s,
-                    '_addr': j
+                    '_addr': j,
+                    
                 })
         if stmt_idx == None  or stmt_idx == len(vex.statements):
             data.append({
